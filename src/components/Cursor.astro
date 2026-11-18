@@ -1,0 +1,116 @@
+<div class="cursor js-cursor" aria-hidden="true">
+  <span class="cursor__ring"></span>
+  <span class="cursor__label js-cursor-label"></span>
+</div>
+
+<script>
+  import { reducedMotion } from '../lib/log'
+
+  // A HUD that trails the real cursor: live coordinates in the open,
+  // a hint over anything clickable. Mouse / trackpad only.
+  const el = document.querySelector<HTMLElement>('.js-cursor')!
+  const label = el.querySelector<HTMLElement>('.js-cursor-label')!
+
+  if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    const ease = reducedMotion() ? 1 : 0.22
+    const pad = (n: number) => String(Math.max(0, Math.round(n))).padStart(4, '0')
+
+    let x = -100
+    let y = -100
+    let sx = x
+    let sy = y
+    let hint = ''
+    let shown = false
+    let raf = 0
+
+    const frame = () => {
+      sx += (x - sx) * ease
+      sy += (y - sy) * ease
+      el.style.transform = `translate3d(${sx}px, ${sy}px, 0)`
+      label.textContent = hint || `x${pad(x)} y${pad(y)}`
+      raf = Math.abs(x - sx) + Math.abs(y - sy) > 0.1 ? requestAnimationFrame(frame) : 0
+    }
+
+    window.addEventListener(
+      'pointermove',
+      (e) => {
+        if (e.pointerType === 'touch') return
+
+        x = e.clientX
+        y = e.clientY
+
+        if (!shown) {
+          shown = true
+          sx = x
+          sy = y
+          el.classList.add('is-on')
+        }
+
+        const target = (e.target as Element).closest?.<HTMLElement>('[data-cursor], a, button, input')
+        hint = target
+          ? (target.dataset.cursor ?? (target.matches('a') ? 'open' : target.matches('input') ? 'adjust' : 'click'))
+          : ''
+        el.classList.toggle('is-active', !!target)
+
+        if (!raf) raf = requestAnimationFrame(frame)
+      },
+      { passive: true }
+    )
+
+    document.documentElement.addEventListener('pointerleave', () => {
+      shown = false
+      el.classList.remove('is-on')
+    })
+  }
+</script>
+
+<style is:global>
+  .cursor {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 90;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+
+  .cursor.is-on {
+    opacity: 1;
+  }
+
+  .cursor__ring {
+    position: absolute;
+    top: -15px;
+    left: -15px;
+    width: 30px;
+    height: 30px;
+    border: 1px solid #fff;
+    border-radius: 50%;
+    mix-blend-mode: difference;
+    transition: transform 0.45s var(--ease);
+  }
+
+  .cursor.is-active .cursor__ring {
+    transform: scale(1.7);
+  }
+
+  .cursor__label {
+    position: absolute;
+    top: 18px;
+    left: 22px;
+    padding: 4px 6px;
+    background: #160000;
+    color: #fff0eb;
+    outline: 1px solid rgb(255 240 235 / 0.3);
+    font: 500 9px / 1 var(--f-mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    transition: transform 0.45s var(--ease);
+  }
+
+  .cursor.is-active .cursor__label {
+    transform: translate(10px, 10px);
+  }
+</style>

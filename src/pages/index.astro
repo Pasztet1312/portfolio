@@ -1,0 +1,251 @@
+---
+import '@fontsource-variable/big-shoulders-display'
+import '@fontsource-variable/jetbrains-mono'
+import '@fontsource/instrument-serif/400.css'
+import 'lenis/dist/lenis.css'
+import '../styles/global.css'
+
+import Head from '../components/Head.astro'
+import Hero from '../components/Hero.astro'
+import Ticker from '../components/Ticker.astro'
+import About from '../components/About.astro'
+import Elements from '../components/Elements.astro'
+import Playground from '../components/Playground.astro'
+import Experiments from '../components/Experiments.astro'
+import Cursor from '../components/Cursor.astro'
+import Terminal from '../components/Terminal.astro'
+import Contact from '../components/Contact.astro'
+
+const title = 'Pavel Korolczuk — Front-End Developer & Creative Technologist'
+const description =
+  'Pavel Korolczuk — front-end developer and creative technologist based in Poznań. WordPress, PrestaShop, custom JavaScript, and interactive work with p5.js and TouchDesigner.'
+
+const boot = [
+  'PK-OS 2.0 — cold start',
+  'loading typefaces ......... ok',
+  'loading modules ........... ok',
+  'starting session .......... ok',
+  'ready.',
+]
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="theme-color" content="#f40c3f" />
+    <link rel="canonical" href="https://korolczuk.dev/" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en_GB" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content="https://korolczuk.dev/" />
+    <meta name="twitter:card" content="summary" />
+
+    <script is:inline>
+      try {
+        if (localStorage.getItem('pk-theme') === 'dark') document.documentElement.classList.add('is-dark')
+        if (sessionStorage.getItem('pk-booted')) document.documentElement.classList.add('is-booted')
+      } catch (e) {}
+    </script>
+  </head>
+
+  <body>
+    <Head />
+
+    <main>
+      <Hero />
+      <Ticker />
+      <About />
+      <Elements />
+      <Experiments />
+      <Playground />
+      <Terminal />
+    </main>
+
+    <Contact />
+    <Cursor />
+
+    <div class="boot js-boot" aria-hidden="true">
+      <pre class="boot__log">{boot.map((line, i) => <span style={`--i:${i}`}>{'> ' + line + '\n'}</span>)}</pre>
+      <span class="boot__tile">Pk</span>
+    </div>
+
+    <script>
+      import Lenis from 'lenis'
+      import { gsap } from 'gsap'
+      import { ScrollTrigger } from 'gsap/ScrollTrigger'
+      import { initFit } from '../lib/fit'
+      import { log, reducedMotion } from '../lib/log'
+      import { scramble } from '../lib/scramble'
+
+      gsap.registerPlugin(ScrollTrigger)
+
+      const root = document.documentElement
+      const calm = reducedMotion()
+
+      initFit()
+
+      /* Smooth scroll --------------------------------------------- */
+
+      if (!calm) {
+        const lenis = new Lenis({ anchors: { offset: -1 } })
+        lenis.on('scroll', ScrollTrigger.update)
+        gsap.ticker.add((time) => lenis.raf(time * 1000))
+        gsap.ticker.lagSmoothing(0)
+        ;(window as any).lenis = lenis
+      }
+
+      /* Boot sequence --------------------------------------------- */
+
+      const bootEl = document.querySelector<HTMLElement>('.js-boot')!
+      const skipBoot = calm || root.classList.contains('is-booted')
+
+      const ready = () => {
+        root.classList.add('is-booted')
+        bootEl.remove()
+        try {
+          sessionStorage.setItem('pk-booted', '1')
+        } catch {}
+        ;(window as any).__pkReady = true
+        document.dispatchEvent(new CustomEvent('pk:ready'))
+      }
+
+      if (skipBoot) {
+        // Let component scripts attach their listeners first
+        requestAnimationFrame(ready)
+      } else {
+        const lines = bootEl.querySelectorAll('.boot__log span')
+
+        gsap
+          .timeline()
+          .to(lines, { opacity: 1, duration: 0.01, stagger: 0.19 }, 0.15)
+          .to(bootEl, { clipPath: 'inset(0 0 100% 0)', duration: 0.9, ease: 'expo.inOut' }, '+=0.25')
+          .call(ready, undefined, '-=0.55')
+      }
+
+      /* Scroll reveals -------------------------------------------- */
+
+      if (!calm) {
+        document.querySelectorAll<HTMLElement>('[data-reveal]').forEach((el) => {
+          gsap.from(el, {
+            y: 36,
+            opacity: 0,
+            duration: 1.1,
+            ease: 'expo.out',
+            scrollTrigger: { trigger: el, start: 'top 88%', once: true },
+          })
+        })
+
+        document.querySelectorAll<HTMLElement>('.sec-head').forEach((head) => {
+          gsap.from(head.children, {
+            yPercent: 60,
+            opacity: 0,
+            duration: 1.1,
+            ease: 'expo.out',
+            stagger: 0.08,
+            scrollTrigger: {
+              trigger: head,
+              start: 'top 90%',
+              once: true,
+              onEnter: () => scramble(head.querySelector<HTMLElement>('.sec-head__title')!, 900),
+            },
+          })
+        })
+
+        // Tiles and rows start hidden, then rise in as they enter
+        const rise = (selector: string, start: string, y: number, stagger: number) => {
+          gsap.set(selector, { opacity: 0, y })
+          ScrollTrigger.batch(selector, {
+            start,
+            once: true,
+            onEnter: (batch) =>
+              gsap.to(batch, {
+                opacity: 1,
+                y: 0,
+                duration: 0.8,
+                ease: 'expo.out',
+                stagger,
+                overwrite: true,
+                clearProps: 'opacity,transform',
+              }),
+          })
+        }
+
+        rise('.stack__row', 'top 94%', 30, 0.07)
+        rise('.exp', 'top 94%', 30, 0.07)
+      }
+
+      /* Header progress + section log ------------------------------ */
+
+      const bar = document.querySelector<HTMLElement>('.js-progress')!
+
+      const onScroll = () => {
+        const max = document.documentElement.scrollHeight - window.innerHeight
+        bar.style.transform = `scaleX(${max > 0 ? Math.min(window.scrollY / max, 1) : 0})`
+      }
+      window.addEventListener('scroll', onScroll, { passive: true })
+      onScroll()
+
+      const sections = document.querySelectorAll<HTMLElement>('section[data-log]')
+      const seen = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) log('> ' + (entry.target as HTMLElement).dataset.log)
+          })
+        },
+        { rootMargin: '-45% 0px -45% 0px' }
+      )
+      sections.forEach((s) => seen.observe(s))
+
+      document.fonts?.ready.then(() => ScrollTrigger.refresh())
+    </script>
+
+    <style is:global>
+      .boot {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        padding: var(--pad);
+        background: var(--red);
+        color: #fff0eb;
+        clip-path: inset(0);
+        /* Safety net: never trap the page behind the overlay if JS fails */
+        animation: boot-out 0.6s 6s forwards;
+      }
+
+      .is-booted .boot {
+        display: none;
+      }
+
+      .boot__log {
+        font: 500 12px / 1.7 var(--f-mono);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .boot__log span {
+        opacity: 0;
+      }
+
+      .boot__tile {
+        font: 900 clamp(5rem, 16vw, 14rem) / 0.8 var(--f-display);
+      }
+
+      @keyframes boot-out {
+        to {
+          visibility: hidden;
+          opacity: 0;
+        }
+      }
+    </style>
+  </body>
+</html>

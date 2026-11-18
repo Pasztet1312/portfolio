@@ -1,0 +1,608 @@
+---
+// Draft entries taken from local project notes — edit titles, text and
+// add `href` once a project has a public link.
+type Experiment = {
+  title: string
+  kind: string
+  state: string
+  tags: string[]
+  text: string
+  href?: string
+}
+
+const experiments: Experiment[] = [
+  {
+    title: 'Pathway Marquee',
+    kind: 'WordPress plugin',
+    state: 'Built',
+    tags: ['Vanilla JS', 'SVG paths', 'WooCommerce'],
+    text: 'An infinite carousel whose items travel along any SVG curve — images, custom markup or WooCommerce products. Written from scratch with zero dependencies: the path is sampled into a lookup table and every position is computed by hand.',
+  },
+  {
+    title: 'YOS Shop',
+    kind: 'Art shop / WordPress',
+    state: 'In progress',
+    tags: ['Lay Theme', 'Custom JS', 'Type-driven layout'],
+    text: 'A storefront for an art shop: four colour blocks, oversized typography, an artist switcher, an arc-shaped menu and an inverting cursor — all layered on top of a grid-based theme with custom code.',
+  },
+  {
+    title: 'Off-Axis Parallax',
+    kind: 'Head-tracked 3D',
+    state: 'Demo',
+    tags: ['Three.js', 'MediaPipe', 'Webcam'],
+    text: 'A “window into the scene”: face tracking drives an asymmetric off-axis camera frustum, so a wireframe room and the object inside it behave like real things behind the glass of your monitor.',
+  },
+  {
+    title: 'Gesture Gallery',
+    kind: 'Hand-controlled gallery',
+    state: 'Demo',
+    tags: ['Three.js', 'Hand tracking', 'Single page'],
+    text: 'A 3D gallery you browse without touching anything — hand landmarks from the webcam become the controls for moving through the space.',
+  },
+  {
+    title: 'Security System',
+    kind: 'Interactive installation',
+    state: 'Prototype',
+    tags: ['Python', 'Realtime voice AI', 'OSC'],
+    text: 'A character that watches the room through a camera, speaks first, changes its mood and fires light, smoke and strobes over OSC depending on how people behave around it.',
+  },
+  {
+    title: 'Jungle Racer',
+    kind: 'Arcade racing game',
+    state: 'In progress',
+    tags: ['C++', 'SDL2', 'OpenGL'],
+    text: 'A PS2-era arcade racer written in plain C++ with a fixed-function OpenGL pipeline and no engine — fog, chunky geometry and all.',
+  },
+]
+---
+
+<section id="work" class="sec exps t-paper" data-log="cd ~/work">
+  <header class="sec-head">
+    <span class="sec-head__no mono">§ 03</span>
+    <h2 class="sec-head__title display">My work</h2>
+    <p class="sec-head__note mono">Selected projects — client work and my own</p>
+  </header>
+
+  <ol class="exps__list">
+    {
+      experiments.map((exp, i) => {
+        const no = 'PRJ-' + String(i + 1).padStart(3, '0')
+        return (
+          <li class="exp" data-log={`open ${no} — ${exp.title}`}>
+            <button class="exp__head" type="button" aria-expanded="false">
+              <span class="exp__no mono">{no}</span>
+              <span class="exp__title display">{exp.title}</span>
+              <span class="exp__kind mono">{exp.kind}</span>
+              <span class="exp__state mono">{exp.state}</span>
+              <span class="exp__plus" aria-hidden="true" />
+            </button>
+
+            <div class="exp__more">
+              <div class="exp__more-inner">
+                <p class="exp__text serif">{exp.text}</p>
+
+                <ul class="exp__tags mono">
+                  {exp.tags.map((tag) => (
+                    <li>{tag}</li>
+                  ))}
+                  {exp.href && (
+                    <li class="exp__link">
+                      <a href={exp.href} target="_blank" rel="noopener">
+                        Visit ↗
+                      </a>
+                    </li>
+                  )}
+                </ul>
+              </div>
+            </div>
+          </li>
+        )
+      })
+    }
+  </ol>
+
+  <p class="exps__foot mono">
+    <span>{experiments.length} entries logged</span>
+    <a class="ul" href="https://www.linkedin.com/in/pavel-korolczuk" target="_blank" rel="noopener">
+      More on LinkedIn ↗
+    </a>
+  </p>
+</section>
+
+<script>
+  import { log } from '../lib/log'
+
+  const rows = document.querySelectorAll<HTMLElement>('.exp')
+
+  rows.forEach((row) => {
+    const head = row.querySelector<HTMLButtonElement>('.exp__head')!
+
+    head.addEventListener('click', () => {
+      const open = !row.classList.contains('is-open')
+
+      rows.forEach((r) => {
+        r.classList.remove('is-open')
+        r.querySelector('.exp__head')!.setAttribute('aria-expanded', 'false')
+      })
+
+      row.classList.toggle('is-open', open)
+      head.setAttribute('aria-expanded', String(open))
+
+      if (open) log('> ' + row.dataset.log)
+    })
+  })
+</script>
+
+<div class="exp-preview js-exp-preview" aria-hidden="true">
+  <canvas width="560" height="360"></canvas>
+  <span class="mono js-exp-preview-label"></span>
+</div>
+
+<script>
+  import { reducedMotion } from '../lib/log'
+
+  // A small live drawing that follows the cursor over each project row.
+  // One hand-written scene per project, in list order.
+  const box = document.querySelector<HTMLElement>('.js-exp-preview')!
+  const cv = box.querySelector('canvas')!
+  const c = cv.getContext('2d')!
+  const label = box.querySelector<HTMLElement>('.js-exp-preview-label')!
+  const rows = Array.from(document.querySelectorAll<HTMLElement>('.exp'))
+
+  if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    const W = cv.width
+    const H = cv.height
+    const calm = reducedMotion()
+    const TAU = Math.PI * 2
+
+    let ink = '#160000'
+    let paper = '#fff0eb'
+    let red = '#f40c3f'
+
+    let current = -1
+    let raf = 0
+    let x = 0
+    let y = 0
+    let sx = 0
+    let sy = 0
+    let u = 0.5 // cursor across the viewport, 0..1
+    let v = 0.5 // cursor down the row, 0..1
+
+    const line = (x1: number, y1: number, x2: number, y2: number) => {
+      c.beginPath()
+      c.moveTo(x1, y1)
+      c.lineTo(x2, y2)
+      c.stroke()
+    }
+
+    const scenes: ((t: number) => void)[] = [
+      // Pathway Marquee — cards riding a curve
+      (t) => {
+        const f = (px: number) => H / 2 + Math.sin((px / W) * TAU + 0.6) * 90 * (0.6 + 0.4 * Math.sin((px / W) * 3))
+        c.globalAlpha = 0.35
+        c.beginPath()
+        for (let px = 0; px <= W; px += 8) {
+          if (px) c.lineTo(px, f(px))
+          else c.moveTo(px, f(px))
+        }
+        c.stroke()
+        c.globalAlpha = 1
+        for (let i = 0; i < 9; i++) {
+          const px = ((i / 9 + t * 0.08) % 1) * W
+          c.save()
+          c.translate(px, f(px))
+          c.rotate(Math.atan2(f(px + 4) - f(px - 4), 8))
+          c.fillStyle = i % 3 ? paper : red
+          c.fillRect(-22, -15, 44, 30)
+          c.restore()
+        }
+      },
+
+      // YOS Shop — four shifting colour blocks and oversized type
+      (t) => {
+        const k = (Math.sin(t * 0.8) + 1) / 2
+        const mx = W * (0.35 + 0.3 * k)
+        const my = H * (0.65 - 0.3 * k)
+        c.fillStyle = red
+        c.fillRect(0, 0, mx, my)
+        c.fillRect(mx, my, W - mx, H - my)
+        c.fillStyle = paper
+        c.fillRect(mx, 0, W - mx, my)
+        c.fillRect(0, my, mx, H - my)
+        c.fillStyle = ink
+        c.font = '900 170px "Big Shoulders Display Variable", Impact, sans-serif'
+        c.fillText('YOS', 22, H - 26)
+      },
+
+      // Off-Axis Parallax — a wireframe room that follows the cursor
+      () => {
+        const ox = (u - 0.5) * 220
+        const oy = (v - 0.5) * 120
+        const corner = (k: number, ix: number, iy: number): [number, number] => {
+          const s = 1 - k * 0.74
+          return [W / 2 + ox * k + ix * W * 0.46 * s, H / 2 + oy * k + iy * H * 0.44 * s]
+        }
+        for (let i = 0; i <= 5; i++) {
+          const k = i / 5
+          const [x0, y0] = corner(k, -1, -1)
+          const [x1, y1] = corner(k, 1, 1)
+          c.globalAlpha = 1 - k * 0.6
+          c.strokeRect(x0, y0, x1 - x0, y1 - y0)
+        }
+        c.globalAlpha = 0.6
+        for (const [ix, iy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
+          const [x0, y0] = corner(0, ix, iy)
+          const [x1, y1] = corner(1, ix, iy)
+          line(x0, y0, x1, y1)
+        }
+        c.globalAlpha = 1
+        c.fillStyle = red
+        c.fillRect(W / 2 + ox * 0.55 - 26, H / 2 + oy * 0.55 - 26, 52, 52)
+      },
+
+      // Gesture Gallery — frames sliding past, the centre one selected
+      (t) => {
+        for (let i = -3; i <= 3; i++) {
+          const p = i + Math.sin(t * 0.7) * 0.6 + (u - 0.5) * 2
+          const s = 1 / (1 + Math.abs(p) * 0.5)
+          const fw = 130 * s
+          const fh = 200 * s
+          const cx = W / 2 + p * 118
+          c.globalAlpha = s
+          if (Math.abs(p) < 0.5) {
+            c.fillStyle = red
+            c.fillRect(cx - fw / 2, H / 2 - fh / 2, fw, fh)
+          }
+          c.strokeRect(cx - fw / 2, H / 2 - fh / 2, fw, fh)
+        }
+      },
+
+      // Security System — a sweep that picks up a target
+      (t) => {
+        const cx = W / 2
+        const cy = H / 2
+        const a = (t * 1.6) % TAU
+        c.globalAlpha = 0.4
+        for (let r = 40; r <= 160; r += 40) {
+          c.beginPath()
+          c.arc(cx, cy, r, 0, TAU)
+          c.stroke()
+        }
+        line(cx - 170, cy, cx + 170, cy)
+        line(cx, cy - 170, cx, cy + 170)
+        for (let k = 0; k < 26; k++) {
+          c.globalAlpha = 1 - k / 26
+          line(cx, cy, cx + Math.cos(a - k * 0.03) * 160, cy + Math.sin(a - k * 0.03) * 160)
+        }
+        const since = (a - 1.1 + TAU) % TAU
+        c.globalAlpha = Math.max(0, 1 - since / 2.4)
+        c.fillStyle = red
+        c.beginPath()
+        c.arc(cx + Math.cos(1.1) * 110, cy + Math.sin(1.1) * 110, 9, 0, TAU)
+        c.fill()
+      },
+
+      // Jungle Racer — a low-poly road rushing at the camera
+      (t) => {
+        const horizon = H * 0.42
+        const bend = (u - 0.5) * 160
+        c.fillStyle = red
+        c.beginPath()
+        c.arc(W * 0.72, horizon, 48, Math.PI, TAU)
+        c.fill()
+        line(0, horizon, W, horizon)
+        line(W / 2 + bend - 10, horizon, W / 2 - 270, H)
+        line(W / 2 + bend + 10, horizon, W / 2 + 270, H)
+        for (let i = 0; i < 9; i++) {
+          const z = (i / 9 + t * 0.35) % 1
+          const yy = horizon + z * z * (H - horizon)
+          const half = 10 + z * z * 260
+          const mid = W / 2 + bend * (1 - z * z)
+          c.globalAlpha = z
+          line(mid - half, yy, mid + half, yy)
+          c.fillStyle = red
+          c.fillRect(mid - 3 - z * 6, yy, 6 + z * 12, 4 + z * 16)
+        }
+      },
+    ]
+
+    const frame = (now: number) => {
+      sx += (x - sx) * 0.18
+      sy += (y - sy) * 0.18
+      box.style.transform = `translate3d(${sx}px, ${sy}px, 0)`
+
+      c.globalAlpha = 1
+      c.fillStyle = ink
+      c.fillRect(0, 0, W, H)
+      c.strokeStyle = paper
+      c.fillStyle = paper
+      c.lineWidth = 2
+      ;(scenes[current] ?? scenes[0])(calm ? 1 : now / 1000)
+      c.globalAlpha = 1
+
+      raf = requestAnimationFrame(frame)
+    }
+
+    const place = (e: PointerEvent) => {
+      const bw = box.offsetWidth
+      const bh = box.offsetHeight
+      x = Math.min(e.clientX + 48, window.innerWidth - bw - 16)
+      y = Math.min(Math.max(e.clientY - bh / 2, 92), window.innerHeight - bh - 16)
+      u = e.clientX / window.innerWidth
+      const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
+      v = (e.clientY - r.top) / r.height
+    }
+
+    rows.forEach((row, i) => {
+      const head = row.querySelector<HTMLElement>('.exp__head')!
+
+      head.addEventListener('pointerenter', (e) => {
+        if (e.pointerType === 'touch') return
+
+        const cs = getComputedStyle(document.documentElement)
+        ink = cs.getPropertyValue('--ink').trim() || ink
+        paper = cs.getPropertyValue('--paper').trim() || paper
+        red = cs.getPropertyValue('--red').trim() || red
+
+        place(e)
+        if (current < 0) {
+          sx = x
+          sy = y
+        }
+        current = i
+        label.textContent = `${row.querySelector('.exp__no')!.textContent} — live sketch`
+        box.classList.add('is-on')
+        cancelAnimationFrame(raf)
+        raf = requestAnimationFrame(frame)
+      })
+
+      head.addEventListener('pointermove', place)
+
+      head.addEventListener('pointerleave', () => {
+        current = -1
+        box.classList.remove('is-on')
+        cancelAnimationFrame(raf)
+      })
+    })
+  }
+</script>
+
+<style is:global>
+  .exps__list {
+    border-top: 1px solid var(--fg);
+  }
+
+  .exp {
+    position: relative;
+    border-bottom: 1px solid var(--fg);
+    isolation: isolate;
+    transition: color 0.35s;
+  }
+
+  .exp::before {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--accent);
+    transform: scaleY(0);
+    transform-origin: 50% 100%;
+    transition: transform 0.6s var(--ease);
+    content: '';
+  }
+
+  .exp__head {
+    display: grid;
+    grid-template-columns: 7rem minmax(0, 1fr) minmax(0, 16rem) 8rem 2rem;
+    align-items: center;
+    gap: clamp(12px, 2vw, 32px);
+    width: 100%;
+    padding: clamp(14px, 1.8vw, 26px) clamp(8px, 1.2vw, 20px);
+    border: 0;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .exp__title {
+    padding-top: 0.08em;
+    font-size: clamp(2.2rem, 6vw, 5.6rem);
+    transition: transform 0.6s var(--ease);
+  }
+
+  .exp__kind,
+  .exp__no {
+    opacity: 0.65;
+  }
+
+  .exp__state::before {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    margin-right: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    vertical-align: 1px;
+    content: '';
+  }
+
+  .exp__plus {
+    position: relative;
+    width: 18px;
+    height: 18px;
+    justify-self: end;
+    transition: transform 0.6s var(--ease);
+  }
+
+  .exp__plus::before,
+  .exp__plus::after {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background: currentColor;
+    content: '';
+  }
+
+  .exp__plus::after {
+    transform: rotate(90deg);
+  }
+
+  .exp__more {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.7s var(--ease);
+  }
+
+  .exp__more-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 20rem);
+    gap: clamp(20px, 4vw, 64px);
+    align-items: end;
+    min-height: 0;
+    padding-inline: calc(7rem + clamp(8px, 1.2vw, 20px) + clamp(12px, 2vw, 32px)) clamp(8px, 1.2vw, 20px);
+    overflow: hidden;
+  }
+
+  .exp__text {
+    max-width: 34em;
+    padding-bottom: clamp(20px, 2.4vw, 36px);
+    font-size: clamp(1.15rem, 1.7vw, 1.7rem);
+    line-height: 1.22;
+  }
+
+  .exp__tags {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+    padding-bottom: clamp(20px, 2.4vw, 36px);
+  }
+
+  .exp__tags li {
+    padding: 6px 10px;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+  }
+
+  .exp__tags a {
+    text-decoration: none;
+  }
+
+  .exp__link {
+    background: var(--paper);
+    color: var(--red);
+    border-color: var(--paper) !important;
+  }
+
+  /* Open state: click anywhere, hover where hover exists */
+  .exp.is-open {
+    color: var(--paper);
+  }
+
+  .exp.is-open::before {
+    transform: none;
+  }
+
+  .exp.is-open .exp__more {
+    grid-template-rows: 1fr;
+  }
+
+  .exp.is-open .exp__plus {
+    transform: rotate(135deg);
+  }
+
+  .exp.is-open .exp__kind,
+  .exp.is-open .exp__no {
+    opacity: 1;
+  }
+
+  @media (hover: hover) {
+    .exp:hover {
+      color: var(--paper);
+    }
+
+    .exp:hover::before {
+      transform: none;
+    }
+
+    .exp:hover .exp__title {
+      transform: translateX(0.12em);
+    }
+
+    .exp:not(.is-open):hover .exp__plus {
+      transform: rotate(90deg);
+    }
+  }
+
+  .exps__foot {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 20px;
+  }
+
+  @media (max-width: 980px) {
+    .exp__head {
+      grid-template-columns: minmax(0, 1fr) 2rem;
+      gap: 6px 12px;
+    }
+
+    .exp__no,
+    .exp__kind,
+    .exp__state {
+      grid-column: 1;
+    }
+
+    .exp__plus {
+      grid-column: 2;
+      grid-row: 1 / span 4;
+    }
+
+    .exp__more-inner {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0;
+      padding-inline: clamp(8px, 1.2vw, 20px);
+    }
+
+    .exp__tags {
+      justify-content: flex-start;
+    }
+  }
+
+  /* Floating live preview */
+  .exp-preview {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 35;
+    width: 280px;
+    border: 1px solid var(--paper);
+    background: var(--ink);
+    color: var(--paper);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+      opacity 0.25s,
+      visibility 0.25s;
+  }
+
+  .exp-preview.is-on {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .exp-preview canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .exp-preview span {
+    display: block;
+    padding: 7px 9px;
+    border-top: 1px solid var(--paper);
+    font-size: 9px;
+  }
+</style>

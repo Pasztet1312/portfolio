@@ -1,0 +1,70 @@
+---
+const items = [
+  'Open for projects',
+  'Freelance / full-time',
+  'Poznań, Poland',
+  'PL · EN · UA · BY · RU',
+  'Front-end × creative technology',
+  'Figma → code → production',
+  'WordPress · PrestaShop · creative code',
+]
+---
+
+<div class="ticker t-ink mono" aria-hidden="true">
+  <div class="ticker__track">
+    {
+      [0, 1].map(() => (
+        <div class="ticker__group">
+          {items.map((item) => (
+            <span class="ticker__item">
+              {item}
+              <i />
+            </span>
+          ))}
+        </div>
+      ))
+    }
+  </div>
+</div>
+
+<style is:global>
+  .ticker {
+    overflow: hidden;
+    border-block: 1px solid var(--fg);
+  }
+
+  .ticker__track {
+    display: flex;
+    width: max-content;
+    animation: ticker 36s linear infinite;
+  }
+
+  .ticker:hover .ticker__track {
+    animation-play-state: paused;
+  }
+
+  .ticker__group {
+    display: flex;
+  }
+
+  .ticker__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 28px;
+    padding: 14px 0 14px 28px;
+    white-space: nowrap;
+  }
+
+  .ticker__item i {
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+    transform: rotate(45deg);
+  }
+
+  @keyframes ticker {
+    to {
+      transform: translateX(-50%);
+    }
+  }
+</style>

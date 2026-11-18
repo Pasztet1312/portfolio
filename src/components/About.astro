@@ -1,0 +1,144 @@
+---
+const sheet = [
+  ['Role', 'Front-end dev & creative technologist'],
+  ['Base', 'Poznań, Poland'],
+  ['Focus', 'WordPress · PrestaShop · custom JS'],
+  ['Languages', 'PL · EN · UA · BY · RU'],
+  ['Status', 'Open — freelance or full-time'],
+]
+---
+
+<section id="about" class="sec about t-paper" data-log="cd ~/about">
+  <header class="sec-head">
+    <span class="sec-head__no mono">§ 01</span>
+    <h2 class="sec-head__title display">About</h2>
+    <p class="sec-head__note mono">Front-end developer &amp; creative technologist from Poznań</p>
+  </header>
+
+  <div class="about__grid">
+    <div class="about__text">
+      <p class="about__lead serif" data-reveal>
+        I turn designs into fast, working websites — and, when the brief
+        allows, into things that move, react and surprise. <em>Front-end is
+        the job; creative technology is where it gets interesting.</em>
+      </p>
+
+      <div class="about__cols">
+        <p data-reveal>
+          Since 2021 I've been building and shipping sites — WordPress,
+          WooCommerce and PrestaShop, custom plugins, Figma files turned into
+          pixel-perfect code — along with the performance, analytics and
+          deployment work around them.
+        </p>
+
+        <p data-reveal>
+          The other half is creative technology: interactive installations
+          and prototypes in p5.js and TouchDesigner, most recently as
+          creative technologist and technical lead at YOS Studio.
+        </p>
+      </div>
+    </div>
+
+    <aside class="about__sheet" data-reveal>
+      <p class="about__sheet-title mono">
+        <span>Data sheet</span>
+        <span>Rev. {new Date().getFullYear()}</span>
+      </p>
+
+      <dl class="mono">
+        {
+          sheet.map(([key, value]) => (
+            <div>
+              <dt>{key}</dt>
+              <dd>{value}</dd>
+            </div>
+          ))
+        }
+      </dl>
+
+    </aside>
+  </div>
+</section>
+
+<style is:global>
+  .about__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 26rem);
+    gap: clamp(40px, 6vw, 96px);
+    align-items: start;
+  }
+
+  .about__lead {
+    font-size: clamp(1.75rem, 3.5vw, 3.6rem);
+    line-height: 1.08;
+    text-wrap: pretty;
+  }
+
+  .about__lead em {
+    color: var(--accent);
+  }
+
+  .about__cols {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(20px, 3vw, 48px);
+    margin-top: clamp(32px, 4vw, 64px);
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .about__sheet {
+    position: sticky;
+    top: calc(var(--head-h) + 24px);
+    border: 1px solid var(--fg);
+  }
+
+  .about__sheet-title {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: var(--fg);
+    color: var(--bg);
+  }
+
+  .about__sheet dl > div:last-child {
+    border-bottom: 0;
+  }
+
+  .about__sheet dl > div {
+    display: grid;
+    grid-template-columns: 9.5em 1fr;
+    gap: 12px;
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--fg);
+    transition:
+      background 0.25s,
+      color 0.25s;
+  }
+
+  .about__sheet dl > div:hover {
+    background: var(--accent);
+    color: var(--paper);
+  }
+
+  .about__sheet dt {
+    opacity: 0.6;
+  }
+
+
+  @media (max-width: 980px) {
+    .about__grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .about__sheet {
+      position: static;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .about__cols {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

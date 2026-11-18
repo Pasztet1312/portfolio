@@ -1,0 +1,223 @@
+/* ------------------------------------------------------------------
+   Pavel Korolczuk — portfolio
+   Tokens, base and shared pieces. Section styles live in components.
+------------------------------------------------------------------- */
+
+:root {
+  --red: #f40c3f;
+  --paper: #fff0eb;
+  --ink: #160000;
+
+  --bg: var(--paper);
+  --fg: var(--ink);
+  --accent: var(--red);
+
+  --f-display: 'Big Shoulders Display Variable', 'Arial Narrow', Impact, sans-serif;
+  --f-serif: 'Instrument Serif', 'Times New Roman', serif;
+  --f-mono: 'JetBrains Mono Variable', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+
+  --head-h: 76px;
+  --pad: clamp(16px, 3vw, 44px);
+  --ease: cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+html.is-dark {
+  --paper: #160000;
+  --ink: #fff0eb;
+}
+
+@media (max-width: 720px) {
+  :root {
+    --head-h: 64px;
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 16px / 1.5 var(--f-mono);
+  scroll-padding-top: var(--head-h);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--red);
+  color: #fff0eb;
+}
+
+a {
+  color: inherit;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+h1,
+h2,
+h3,
+p,
+ul,
+ol,
+dl,
+dd,
+pre {
+  margin: 0;
+  padding: 0;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Themes ---------------------------------------------------------- */
+
+.t-paper,
+.t-red,
+.t-ink {
+  background: var(--bg);
+  color: var(--fg);
+}
+
+.t-paper {
+  --bg: var(--paper);
+  --fg: var(--ink);
+  --accent: var(--red);
+}
+
+.t-red {
+  --bg: var(--red);
+  --fg: var(--paper);
+  --accent: var(--ink);
+}
+
+.t-ink {
+  --bg: var(--ink);
+  --fg: var(--paper);
+  --accent: var(--red);
+}
+
+/* Type helpers ---------------------------------------------------- */
+
+.mono {
+  font: 500 11px / 1.4 var(--f-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.display {
+  font-family: var(--f-display);
+  font-weight: 900;
+  line-height: 0.86;
+  letter-spacing: -0.005em;
+  text-transform: uppercase;
+}
+
+.serif {
+  font-family: var(--f-serif);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+/* No italics anywhere: emphasis is carried by colour */
+em,
+i {
+  font-style: normal;
+}
+
+/* Section scaffolding --------------------------------------------- */
+
+.sec {
+  position: relative;
+  padding: clamp(72px, 11vw, 168px) var(--pad);
+}
+
+.sec-head {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: end;
+  gap: 12px clamp(16px, 3vw, 40px);
+  margin-bottom: clamp(40px, 6vw, 88px);
+  padding-bottom: clamp(16px, 2vw, 28px);
+  border-bottom: 1px solid var(--fg);
+}
+
+.sec-head__no {
+  align-self: start;
+  padding-top: 0.6em;
+}
+
+.sec-head__title {
+  font-size: clamp(2.75rem, 8.4vw, 8rem);
+}
+
+.sec-head__note {
+  max-width: 28ch;
+  text-align: right;
+}
+
+@media (max-width: 720px) {
+  .sec-head {
+    grid-template-columns: auto 1fr;
+  }
+
+  .sec-head__note {
+    grid-column: 1 / -1;
+    max-width: none;
+    text-align: left;
+  }
+}
+
+/* Link with a sliding underline ----------------------------------- */
+
+.ul {
+  background: linear-gradient(currentColor, currentColor) 0 100% / 100% 1px no-repeat;
+  text-decoration: none;
+  transition: background-size 0.5s var(--ease);
+}
+
+.ul:hover {
+  background-size: 0 1px;
+  background-position: 100% 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,189 @@
+---
+const email = 'pasha.korolchukk@gmail.com'
+---
+
+<section id="contact" class="contact t-red" data-log="cd ~/contact">
+  <div class="contact__top mono">
+    <span>§ 06</span>
+    <span>Start a project</span>
+  </div>
+
+  <a class="contact__title display" href={`mailto:${email}`} data-fit data-fit-max-vh="33" aria-label="Start a project — write me an email">
+    <span class="contact__row" aria-hidden="true">
+      <span>Start a</span>
+      <svg class="contact__arrow" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="9">
+        <path d="M12 88 88 12M26 12h62v62"></path>
+      </svg>
+    </span>
+    <span class="contact__row" aria-hidden="true">
+      <span data-fit-target>Project</span>
+    </span>
+  </a>
+
+  <p class="contact__equation serif" data-reveal>
+    Your idea + my code <span>→</span>
+    <em>something that ships.</em>
+  </p>
+
+  <div class="contact__grid mono">
+    <div>
+      <span class="contact__label">Mail</span>
+      <a class="ul" href={`mailto:${email}`}>{email}</a>
+      <button class="contact__copy js-copy" type="button" data-email={email}>Copy</button>
+    </div>
+
+    <div>
+      <span class="contact__label">Elsewhere</span>
+      <a class="ul" href="https://www.linkedin.com/in/pavel-korolczuk" target="_blank" rel="noopener">LinkedIn ↗</a>
+    </div>
+
+    <div>
+      <span class="contact__label">Availability</span>
+      <span>Freelance or full-time, remote or Poznań</span>
+    </div>
+  </div>
+
+  <footer class="contact__foot mono">
+    <span>© {new Date().getFullYear()} Pavel Korolczuk</span>
+    <span>Hand-built with Astro, GSAP &amp; Lenis</span>
+    <a class="ul" href="#top">Back to top ↑</a>
+  </footer>
+</section>
+
+<script>
+  import { log } from '../lib/log'
+
+  const copy = document.querySelector<HTMLButtonElement>('.js-copy')!
+
+  copy.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(copy.dataset.email!)
+      copy.textContent = 'Copied ✓'
+      log('> clipboard: email copied')
+    } catch {
+      copy.textContent = 'Press Ctrl+C'
+    }
+    setTimeout(() => (copy.textContent = 'Copy'), 2000)
+  })
+</script>
+
+<style is:global>
+  .contact {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(28px, 4vw, 56px);
+    padding: clamp(20px, 2.4vw, 32px) var(--pad);
+    overflow: hidden;
+  }
+
+  .contact__top {
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: clamp(14px, 1.6vw, 22px);
+    border-bottom: 1px solid var(--fg);
+  }
+
+  .contact__title {
+    display: block;
+    margin-top: clamp(24px, 5vw, 80px);
+    font-size: 22vw;
+    text-decoration: none;
+  }
+
+  .contact__row {
+    display: flex;
+    align-items: center;
+    gap: 0.14em;
+  }
+
+  .contact__row > span {
+    display: inline-block;
+    padding-top: 0.06em;
+    white-space: nowrap;
+    transition: transform 0.8s var(--ease);
+  }
+
+  .contact__arrow {
+    width: 0.62em;
+    height: 0.62em;
+    transition: transform 0.8s var(--ease);
+  }
+
+  .contact__title:hover .contact__arrow {
+    transform: translate(0.04em, -0.04em) rotate(45deg);
+  }
+
+  .contact__title:hover .contact__row:first-child > span {
+    transform: translateX(0.06em);
+  }
+
+  .contact__equation {
+    font-size: clamp(1.4rem, 3vw, 3rem);
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+
+  .contact__equation sub {
+    font-family: var(--f-mono);
+    font-size: 0.34em;
+    letter-spacing: 0.04em;
+    opacity: 0.8;
+  }
+
+  .contact__equation span {
+    padding: 0 0.15em;
+  }
+
+  .contact__grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px clamp(16px, 3vw, 40px);
+    padding-top: clamp(16px, 2vw, 28px);
+    border-top: 1px solid var(--fg);
+    font-size: 13px;
+    text-transform: none;
+  }
+
+  .contact__label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 11px;
+    text-transform: uppercase;
+    opacity: 0.65;
+  }
+
+  .contact__copy {
+    margin-left: 10px;
+    padding: 4px 9px;
+    border: 1px solid var(--fg);
+    border-radius: 999px;
+    background: none;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition:
+      background 0.2s,
+      color 0.2s;
+  }
+
+  .contact__copy:hover {
+    background: var(--fg);
+    color: var(--bg);
+  }
+
+  .contact__foot {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 10px 24px;
+    padding-top: clamp(14px, 1.6vw, 22px);
+    border-top: 1px solid var(--fg);
+  }
+
+  @media (max-width: 800px) {
+    .contact__grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+</style>

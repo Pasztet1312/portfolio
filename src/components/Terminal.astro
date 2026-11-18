@@ -1,0 +1,381 @@
+---
+const chips = ['help', 'whoami', 'stack', 'work', 'play type hello', 'accent blue', 'accent reset', 'theme']
+---
+
+<section id="terminal" class="sec term t-ink" data-log="ssh visitor@korolczuk.dev">
+  <header class="sec-head">
+    <span class="sec-head__no mono">§ 05</span>
+    <h2 class="sec-head__title display">Terminal</h2>
+    <p class="sec-head__note mono">Press <kbd>/</kbd> anywhere to jump here. The commands drive the page</p>
+  </header>
+
+  <div class="term__window" data-reveal>
+    <div class="term__bar mono">
+      <span>pk-os — visitor session</span>
+      <span class="term__bar-right">tty1 · utf-8</span>
+    </div>
+
+    <div class="term__body js-term-body">
+      <div class="term__out js-term-out" role="log" aria-live="polite"></div>
+
+      <form class="term__form js-term-form" autocomplete="off">
+        <label class="term__prompt" for="term-input">visitor@korolczuk:~$</label>
+        <input
+          id="term-input"
+          class="term__input js-term-input"
+          type="text"
+          spellcheck="false"
+          autocapitalize="off"
+          autocomplete="off"
+          enterkeyhint="send"
+          aria-label="Terminal command"
+        />
+      </form>
+    </div>
+
+    <div class="term__chips mono">
+      <span>Try:</span>
+      {chips.map((c) => <button type="button" data-cmd={c}>{c}</button>)}
+    </div>
+  </div>
+</section>
+
+<script>
+  import { log } from '../lib/log'
+
+  const EMAIL = 'pasha.korolchukk@gmail.com'
+
+  const body = document.querySelector<HTMLElement>('.js-term-body')!
+  const out = document.querySelector<HTMLElement>('.js-term-out')!
+  const form = document.querySelector<HTMLFormElement>('.js-term-form')!
+  const input = document.querySelector<HTMLInputElement>('.js-term-input')!
+  const chips = document.querySelectorAll<HTMLButtonElement>('.term__chips button')
+
+  const history: string[] = []
+  let cursor = 0
+
+  type Line = string | { text: string; cls?: string }
+
+  const print = (lines: Line[]) => {
+    lines.forEach((line) => {
+      const row = document.createElement('div')
+      row.className = 'term__line'
+      if (typeof line === 'string') {
+        row.textContent = line
+      } else {
+        row.textContent = line.text
+        if (line.cls) row.classList.add(line.cls)
+      }
+      out.appendChild(row)
+    })
+
+    // Keep the log from growing forever
+    while (out.childElementCount > 120) out.firstElementChild!.remove()
+    body.scrollTop = body.scrollHeight
+  }
+
+  const go = (id: string) => {
+    const target = document.getElementById(id)
+    if (!target) return
+    const lenis = (window as any).lenis
+    if (lenis) lenis.scrollTo(target, { offset: -1 })
+    else target.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  const commands: Record<string, (args: string[]) => Line[] | void> = {
+    help: () => [
+      'Available commands:',
+      '  whoami      who is this guy',
+      '  about       jump to the about section',
+      '  stack       list what I build with',
+      '  work        list the projects',
+      '  contact     how to reach me',
+      '  email       copy my email address',
+      '  theme       flip the colour scheme',
+      '  accent      recolour the site: accent blue | #rrggbb | reset',
+      '  play        drive the sketch: play flow | swarm | type <text>',
+      '  date        local time in Poznań',
+      '  clear       wipe the screen',
+    ],
+
+    whoami: () => [
+      'Pavel Korolczuk — front-end developer & creative technologist, Poznań.',
+      'WordPress, PrestaShop and custom JavaScript;',
+      'interactive work in p5.js and TouchDesigner.',
+    ],
+
+    about: () => {
+      go('about')
+      return ['Opening ~/about …']
+    },
+
+    stack: () => {
+      const rows = Array.from(document.querySelectorAll('.stack__row')).map((row) => {
+        const group = row.querySelector('.stack__group')!.textContent!.trim()
+        const items = Array.from(row.querySelectorAll('.stack__items li')).map((li) => li.textContent!.trim())
+        return `  ${group.padEnd(20)} ${items.join(', ')}`
+      })
+      go('stack')
+      return [...rows, 'Opening ~/stack …']
+    },
+
+    work: () => {
+      const rows = Array.from(document.querySelectorAll('.exp')).map((exp) => {
+        const no = exp.querySelector('.exp__no')!.textContent!
+        const title = exp.querySelector('.exp__title')!.textContent!
+        const kind = exp.querySelector('.exp__kind')!.textContent!
+        return `  ${no}  ${title.padEnd(20)} ${kind}`
+      })
+      go('work')
+      return [...rows, 'Opening ~/work …']
+    },
+
+    contact: () => {
+      go('contact')
+      return [`  mail      ${EMAIL}`, '  linkedin  /in/pavel-korolczuk', 'Opening ~/contact …']
+    },
+
+    email: () => {
+      navigator.clipboard?.writeText(EMAIL).catch(() => {})
+      return [`${EMAIL} — copied to clipboard.`]
+    },
+
+    theme: () => {
+      document.dispatchEvent(new CustomEvent('pk:toggle-theme'))
+      return ['Theme switched.']
+    },
+
+    date: () => [
+      new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Europe/Warsaw',
+        dateStyle: 'full',
+        timeStyle: 'medium',
+      }).format(new Date()) + ' (Poznań)',
+    ],
+
+    ls: () => ['about/  stack/  work/  playground/  contact/'],
+
+    accent: (args) => {
+      const palette: Record<string, string> = {
+        red: '#f40c3f',
+        blue: '#1f4bff',
+        green: '#0a8f4f',
+        orange: '#ff5a1f',
+        violet: '#7a3cff',
+      }
+      const want = args[0]
+      if (!want) return [`Usage: accent ${Object.keys(palette).join(' | ')} | #rrggbb | reset`]
+
+      const value = want === 'reset' ? palette.red : (palette[want] ?? (/^#[0-9a-f]{6}$/.test(want) ? want : ''))
+      if (!value) {
+        return [{ text: `accent: unknown colour "${want}". Try: ${Object.keys(palette).join(', ')} or #rrggbb`, cls: 'is-err' }]
+      }
+
+      document.documentElement.style.setProperty('--red', value)
+      document.dispatchEvent(new CustomEvent('pk:theme'))
+      return [`Accent set to ${value}.`]
+    },
+
+    play: (args) => {
+      const modes = ['flow', 'swarm', 'type']
+      const named = modes.includes(args[0])
+      const mode = named ? args[0] : args.length ? 'type' : ''
+      const text = (named ? args.slice(1) : args).join(' ')
+
+      document.dispatchEvent(new CustomEvent('pk:play', { detail: { mode, text } }))
+      go('play')
+      return [
+        mode ? `Sketch: ${mode}${text ? ` "${text}"` : ''}` : 'Opening ~/playground …',
+        'Usage: play flow | play swarm | play type <text>',
+      ]
+    },
+
+    sudo: (args) => {
+      if (args.join(' ').includes('hire')) {
+        go('contact')
+        return ['Permission granted. Opening ~/contact …']
+      }
+      return [{ text: 'visitor is not in the sudoers file. Try: sudo hire pavel', cls: 'is-err' }]
+    },
+
+    clear: () => {
+      out.innerHTML = ''
+    },
+  }
+
+  const run = (raw: string) => {
+    const text = raw.trim()
+    print([{ text: `visitor@korolczuk:~$ ${text}`, cls: 'is-cmd' }])
+    if (!text) return
+
+    history.push(text)
+    cursor = history.length
+
+    const [name, ...args] = text.toLowerCase().split(/\s+/)
+    const cmd = Object.prototype.hasOwnProperty.call(commands, name) ? commands[name] : null
+
+    if (!cmd) {
+      print([{ text: `command not found: ${name}. Type "help".`, cls: 'is-err' }])
+    } else {
+      const result = cmd(args)
+      if (result) print(result)
+    }
+
+    log(`> exec ${name}`)
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault()
+    run(input.value)
+    input.value = ''
+  })
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      if (!history.length) return
+      e.preventDefault()
+      cursor = Math.max(0, Math.min(history.length, cursor + (e.key === 'ArrowUp' ? -1 : 1)))
+      input.value = history[cursor] ?? ''
+    }
+  })
+
+  body.addEventListener('click', () => {
+    if (!window.getSelection()?.toString()) input.focus({ preventScroll: true })
+  })
+
+  // "/" from anywhere on the page jumps into the terminal
+  window.addEventListener('keydown', (e) => {
+    if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return
+    const active = document.activeElement
+    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return
+    e.preventDefault()
+    go('terminal')
+    input.focus({ preventScroll: true })
+  })
+
+  chips.forEach((chip) => {
+    chip.addEventListener('click', () => run(chip.dataset.cmd!))
+  })
+
+  print([
+    'PK-OS 2.0 — visitor session started.',
+    'Type "help" and press Enter, or tap a command below.',
+    '',
+  ])
+</script>
+
+<style is:global>
+  .term kbd {
+    padding: 1px 5px;
+    border: 1px solid currentColor;
+    border-radius: 3px;
+    font: inherit;
+  }
+
+  .term__window {
+    max-width: 1080px;
+    margin-inline: auto;
+    border: 1px solid var(--fg);
+  }
+
+  .term__bar {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 14px;
+    background: var(--fg);
+    color: var(--bg);
+  }
+
+  .term__body {
+    height: clamp(300px, 46vh, 460px);
+    padding: 16px 14px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent) transparent;
+    font: 400 13px / 1.6 var(--f-mono);
+    cursor: text;
+  }
+
+  .term__line {
+    min-height: 1.6em;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .term__line.is-cmd {
+    color: var(--accent);
+  }
+
+  .term__line.is-err {
+    opacity: 0.6;
+  }
+
+  .term__form {
+    display: flex;
+    gap: 8px;
+  }
+
+  .term__prompt {
+    flex: none;
+    color: var(--accent);
+  }
+
+  .term__input {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    outline: none;
+    background: none;
+    color: inherit;
+    font: inherit;
+    caret-color: var(--accent);
+  }
+
+  .term__chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 14px;
+    border-top: 1px solid var(--fg);
+  }
+
+  .term__chips span {
+    margin-right: 6px;
+    opacity: 0.6;
+  }
+
+  .term__chips button {
+    padding: 6px 10px;
+    border: 1px solid var(--fg);
+    border-radius: 999px;
+    background: none;
+    letter-spacing: inherit;
+    text-transform: inherit;
+    cursor: pointer;
+    transition:
+      background 0.2s,
+      color 0.2s,
+      border-color 0.2s;
+  }
+
+  .term__chips button:hover {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--paper);
+  }
+
+  @media (max-width: 600px) {
+    .term__bar-right {
+      display: none;
+    }
+
+    .term__body {
+      font-size: 12px;
+    }
+  }
+</style>

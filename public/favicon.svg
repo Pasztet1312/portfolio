@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" fill="#f40c3f"/>
+  <text x="6" y="15" font-family="monospace" font-size="10" fill="#fff0eb">01</text>
+  <text x="32" y="52" text-anchor="middle" font-family="'Arial Narrow', Impact, sans-serif" font-weight="900" font-size="38" fill="#fff0eb">Pk</text>
+</svg>

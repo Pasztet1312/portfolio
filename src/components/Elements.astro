@@ -1,0 +1,93 @@
+---
+// The stack, grouped. Edit the lists below.
+const groups = [
+  { name: 'Front-end', items: ['HTML5', 'CSS & SCSS', 'JavaScript', 'jQuery', 'React', 'Astro', 'Tailwind', 'Bootstrap', 'GSAP'] },
+  { name: 'CMS & commerce', items: ['WordPress', 'WooCommerce', 'PrestaShop', 'PHP'] },
+  { name: 'Creative code', items: ['p5.js', 'TouchDesigner', 'Three.js', 'Spline'] },
+  { name: 'Performance & data', items: ['Core Web Vitals', 'GA4 & GTM', 'SEO', 'SQL'] },
+  { name: 'Tooling', items: ['Figma', 'Git', 'npm', 'SSH & VPS', 'AI workflows'] },
+]
+---
+
+<section id="stack" class="sec stack t-paper" data-log="cd ~/stack">
+  <header class="sec-head">
+    <span class="sec-head__no mono">§ 02</span>
+    <h2 class="sec-head__title display">Stack</h2>
+    <p class="sec-head__note mono">What I build with</p>
+  </header>
+
+  <ul class="stack__list">
+    {
+      groups.map((g, i) => (
+        <li class="stack__row" data-log={`ls stack/${g.name.toLowerCase().replace(/[^a-z]+/g, '-')}`}>
+          <span class="stack__no mono">{String(i + 1).padStart(2, '0')}</span>
+          <h3 class="stack__group mono">{g.name}</h3>
+          <ul class="stack__items display">
+            {g.items.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        </li>
+      ))
+    }
+  </ul>
+</section>
+
+<script>
+  import { log } from '../lib/log'
+
+  document.querySelectorAll<HTMLElement>('.stack__row').forEach((row) => {
+    row.addEventListener('pointerenter', () => log('> ' + row.dataset.log))
+  })
+</script>
+
+<style is:global>
+  .stack__list {
+    border-top: 1px solid var(--fg);
+  }
+
+  .stack__row {
+    display: grid;
+    grid-template-columns: 3rem 13rem minmax(0, 1fr);
+    align-items: baseline;
+    gap: 12px clamp(16px, 3vw, 48px);
+    padding: clamp(18px, 2.2vw, 34px) clamp(8px, 1.2vw, 20px);
+    border-bottom: 1px solid var(--fg);
+  }
+
+  .stack__no {
+    opacity: 0.6;
+  }
+
+  .stack__items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.1em 0.7em;
+    font-size: clamp(1.7rem, 3.3vw, 3.2rem);
+  }
+
+  .stack__items li {
+    transition: color 0.25s;
+  }
+
+  .stack__items li:hover {
+    color: var(--accent);
+  }
+
+  .stack__items li:not(:last-child)::after {
+    margin-left: 0.7em;
+    color: var(--accent);
+    content: '/';
+    opacity: 0.55;
+  }
+
+  @media (max-width: 800px) {
+    .stack__row {
+      grid-template-columns: 2.5rem minmax(0, 1fr);
+    }
+
+    .stack__items {
+      grid-column: 2;
+    }
+  }
+</style>
